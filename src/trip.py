@@ -1,9 +1,9 @@
 from location import Location
-from gmaps_client import GMapsClient
+from norm import Norm
 
 class Trip:
     def __init__(self, start: Location, destination: Location):
-        self.start = start
-        self.destination  = destination
-        self.distance = GMapsClient().get_distance(self.start, self.destination)
+        self.start: Location = start
+        self.destination: Location  = destination
+        self.norm: Norm =  self.start.norm(self.destination)
     

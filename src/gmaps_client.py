@@ -1,6 +1,6 @@
 import os
 import googlemaps
-from location import Coordinates, Location
+from .coordinates import Coordinates
 from norm import Norm
 
 class GMapsClient:
@@ -15,7 +15,7 @@ class GMapsClient:
         reverse_geocode_results = self.client.reverse_geocode(coordinates.to_tuple())
         return reverse_geocode_results["results"][0]["formatted_address"]
     
-    def get_distance(self, start: Location, destination:Location) -> Norm:
-        distance_matrix_results = self.client.distance_matrix(origins=start.coordinates.to_tuple(), destinations=destination.coordinates.to_tuple(), mode="driving", units="metric")
+    def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
+        distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric")
         distances = distance_matrix_results["rows"][0]["elements"][0]
         return Norm(distances["distance"]["value"], distances["duration"]["value"])
