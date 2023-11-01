@@ -1,11 +1,14 @@
 import os
 import googlemaps
-from .coordinates import Coordinates
+from coordinates import Coordinates
 from norm import Norm
+from dotenv import load_dotenv
 
 class GMapsClient:
     def __init__(self) -> None:
-        self.client = googlemaps.Client(key=os.environ["GMAPS_API_KEY"])
+        load_dotenv()
+
+        self.client = googlemaps.Client(key=os.getenv("GMAPS_API_KEY"))
     
     def address_to_coordinates(self, address: str) -> Coordinates:
         geocode_result = self.client.geocode(address)

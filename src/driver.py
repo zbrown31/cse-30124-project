@@ -1,14 +1,13 @@
-from ride import Ride
 from collections import deque
 
 class Driver:
     def __init__(self, name):
         self.name = name
-        self.current_ride: Ride | None = None
-        self.ride_queue: deque[Ride] = deque()
-        self.ride_history: list[Ride] = []
+        self.current_ride: str | None = None
+        self.ride_queue: deque[str] = deque()
+        self.ride_history: list[str] = []
     
-    def add_ride(self, ride: Ride) -> None:
+    def add_ride(self, ride: str) -> None:
         if self.current_ride is None:
             self.current_ride = ride
         else:
@@ -21,8 +20,8 @@ class Driver:
         else:
             self.current_ride = self.ride_queue.popleft()
 
-    def get_ride_history(self) -> list[Ride]:
+    def get_ride_history(self) -> list[str]:
         return self.ride_history
     
-    def get_ride_queue(self) -> deque[Ride]:
+    def get_ride_queue(self) -> deque[str]:
         return self.ride_queue
