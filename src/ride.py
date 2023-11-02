@@ -20,6 +20,7 @@ class Ride:
         self.price = price
         self.request_time: datetime = datetime.now()
         self.match_time: datetime | None = None
+        self.arrived_time: datetime | None = None
         self.cancel_time: datetime | None = None
     
     def cancel(self) -> None:
@@ -33,5 +34,19 @@ class Ride:
 
     def set_status(self, status:RideStatus) -> None:
         self.status = status
+    
+    def get_match_time(self) -> int:
+        if self.match_time is not None and self.request_time is not None:
+            return (self.match_time - self.request_time).total_seconds()
+        else:
+            return None
+    
+    def get_cancel_time(self) -> int:
+        if self.cancel_time is not None and self.request_time is not None:
+            return (self.cancel_time - self.request_time).total_seconds()
+        else:
+            return None
+    
+    
 
     
