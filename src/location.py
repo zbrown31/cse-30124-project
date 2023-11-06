@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from multipledispatch import dispatch
-from coordinates import Coordinates
-from gmaps_client import GMapsClient
-from norm import Norm
+from .coordinates import Coordinates
+from .gmaps_client import GMapsClient
+from .norm import Norm
 
 
 class Location:

@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from urllib.parse import _NetlocResultMixinBytes
 import numpy as np
-from ride import Ride, RideStatus
-from driver import Driver
+from .ride import Ride, RideStatus
+from .driver import Driver
 
 class Metric(ABC):
 
@@ -40,7 +40,7 @@ class MatchTime(Metric):
         self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
-        self.value = np.mean(map(lambda x: x.get_match_time(),ride_assignments))
+        self.value = np.mean(list(map(lambda x: x.get_time_to_match(),ride_assignments)))
     
     def display(self) -> None:
         print(f"Average Match Time:{self.value} seconds")

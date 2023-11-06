@@ -1,5 +1,5 @@
-from location import Location
-from norm import Norm
+from .location import Location
+from .norm import Norm
 
 class Trip:
     def __init__(self, start: Location, destination: Location, norm: Norm | None = None):

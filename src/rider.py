@@ -1,6 +1,6 @@
 class Rider:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, id):
+        self.id = id
         self.current_ride: str | None = None
         self.ride_history: list[str] = []
     

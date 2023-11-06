@@ -1,6 +1,6 @@
-from rider import Rider
-from driver import Driver
-from trip import Trip
+from .rider import Rider
+from .driver import Driver
+from .trip import Trip
 from datetime import date, datetime, timedelta
 from enum import Enum
 
@@ -12,13 +12,13 @@ class RideStatus(Enum):
     CANCELLED = 4
 
 class Ride:
-    def __init__(self, rider:Rider, trip:Trip, price: float,  driver:Driver | None = None) -> None:
+    def __init__(self, rider:Rider, trip:Trip, price: float,  request_time:datetime, driver:Driver | None = None) -> None:
         self.rider = rider
         self.driver = driver
         self.trip = trip
         self.status: RideStatus = RideStatus.REQUESTED
         self.price = price
-        self.request_time: datetime = datetime.now()
+        self.request_time: datetime = request_time
         self.match_time: datetime | None = None
         self.pickup_time: datetime | None = None
         self.arrived_time: datetime | None = None

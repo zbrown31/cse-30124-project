@@ -1,7 +1,7 @@
 import os
 import googlemaps
-from coordinates import Coordinates
-from norm import Norm
+from .coordinates import Coordinates
+from .norm import Norm
 from dotenv import load_dotenv
 
 class GMapsClient:
