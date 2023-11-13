@@ -1,5 +1,5 @@
 import pathlib, json
-from datetime import datetime
+from datetime import datetime, timedelta
 from .rider import Rider
 from .driver import Driver
 from .coordinates import Coordinates
@@ -23,7 +23,7 @@ class DataReader:
                 self.resources["Rides"] = rides
                 drivers = []
                 for driver in self.raw_data["Drivers"].items():
-                    drivers.append(DataReader.parse_ride_json(driver[1]))
+                    drivers.append(DataReader.parse_driver_json(driver[1]))
                 self.resources["Drivers"] = drivers
         else:
             self.data = None
@@ -38,7 +38,7 @@ class DataReader:
     @staticmethod
     def parse_driver_json(driver_dict: dict) -> Driver | None:
         try:
-            return Rider(driver_dict.get("first_name", "") + driver_dict.get("last_name", ""))
+            return Driver(driver_dict.get("uid"))
         except KeyError as ex:
             return None
         
@@ -52,13 +52,12 @@ class DataReader:
     @staticmethod
     def parse_trip_json(trip_dict:dict) -> Trip:
         try:
-            return Trip(start=DataReader.parse_location_json(trip_dict["start_location"]), destination=DataReader.parse_location_json(trip_dict["destination_location"]), norm=Norm(trip_dict["distance"], trip_dict["estimated_time"]))
+            return Trip(start=DataReader.parse_location_json(trip_dict["start_location"]), destination=DataReader.parse_location_json(trip_dict["destination_location"]), norm=Norm(trip_dict["distance"], timedelta(seconds=int(trip_dict["estimated_time"]))))
         except KeyError as ex:
             return None
         
     @staticmethod
     def parse_ride_json(ride_dict:dict) -> Ride | None:
-        print(ride_dict)
         if not 'request_time' in ride_dict:
             return None
         return Ride(rider=DataReader.parse_rider_json(rider_dict=ride_dict.get("rider",{})), trip=DataReader.parse_trip_json(trip_dict=ride_dict.get("trip",{})), price=ride_dict.get("price",0), request_time=datetime.fromtimestamp(ride_dict['request_time']['value']['_seconds']), driver=DataReader.parse_driver_json(driver_dict=ride_dict.get("driver", {})))

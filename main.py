@@ -11,5 +11,6 @@ dispatcher = Dispatcher(data.resources["Rides"], data.resources["Drivers"], base
 
 finished_rides = dispatcher.simulate_rides()
 
-base_strategy.evaluate(metrics=[MatchRate(), MatchTime(), CancelRate(), RideDistributionByDriver(data.resources["Drivers"])], rides=finished_rides, drivers=data.resources["Drivers"])
-print(finished_rides)
+results = base_strategy.evaluate(metrics=[MatchRate(), MatchTime(), CancelRate(), RideDistributionByDriver(data.resources["Drivers"])], rides=finished_rides, drivers=data.resources["Drivers"])
+
+[metric.display() for metric in results]

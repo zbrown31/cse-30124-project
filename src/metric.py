@@ -20,7 +20,7 @@ class MatchRate(Metric):
         self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
-        self.value = sum(map(lambda x: int(x.status == RideStatus.COMPLETED),ride_assignments))
+        self.value = np.mean(list(map(lambda x: int(x.status == RideStatus.COMPLETED),ride_assignments)))
     
     def display(self) -> None:
         print(f"Match Rate: {round(self.value * 100, 3)}%")
@@ -30,7 +30,7 @@ class CancelRate(Metric):
         self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
-        self.value = sum(map(lambda x: int(x.status == RideStatus.CANCELLED),ride_assignments))
+        self.value = np.mean(list(map(lambda x: int(x.status == RideStatus.CANCELLED),ride_assignments)))
     
     def display(self) -> None:
         print(f"Cancel Rate: {round(self.value * 100, 3)}%")
@@ -40,7 +40,7 @@ class MatchTime(Metric):
         self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
-        self.value = np.mean(list(map(lambda x: x.get_time_to_match(),ride_assignments)))
+        self.value = np.mean(list(filter(lambda x: x is not None, map(lambda x: x.get_time_to_match(),ride_assignments))))
     
     def display(self) -> None:
         print(f"Average Match Time:{self.value} seconds")

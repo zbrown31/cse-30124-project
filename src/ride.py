@@ -1,3 +1,4 @@
+from src import gmaps_client
 from .rider import Rider
 from .driver import Driver
 from .trip import Trip
@@ -23,20 +24,21 @@ class Ride:
         self.pickup_time: datetime | None = None
         self.arrived_time: datetime | None = None
         self.cancel_time: datetime | None = None
-        self.time_to_pickup: timedelta = timedelta(seconds=0)
+        self.time_to_pickup: timedelta | None = None
     
     def cancel(self, time:datetime) -> None:
         self.status = RideStatus.CANCELLED
         self.cancel_time = time
     
-    def match(self, driver: Driver, time:datetime) -> None:
+    def match(self, driver: Driver, time:datetime, time_to_pickup: timedelta) -> None:
         self.status = RideStatus.MATCHED
         self.driver = driver
         self.match_time = time
+        self.time_to_pickup = time_to_pickup
 
     def picked_up(self, time:datetime) -> None:
         self.status = RideStatus.IN_RIDE
-        self.pickup_time = datetime.now()
+        self.pickup_time = time
     
     def arrived(self, time:datetime) -> None:
         self.status = RideStatus.COMPLETED

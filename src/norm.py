@@ -1,5 +1,6 @@
+from datetime import timedelta
 
 class Norm:
-    def __init__(self, distance, duration):
+    def __init__(self, distance: int, duration: timedelta):
         self.distance = distance
         self.duration = duration

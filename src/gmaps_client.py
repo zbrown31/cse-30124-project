@@ -3,6 +3,7 @@ import googlemaps
 from .coordinates import Coordinates
 from .norm import Norm
 from dotenv import load_dotenv
+from datetime import timedelta
 
 class GMapsClient:
     def __init__(self) -> None:
@@ -21,4 +22,4 @@ class GMapsClient:
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
         distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric")
         distances = distance_matrix_results["rows"][0]["elements"][0]
-        return Norm(distances["distance"]["value"], distances["duration"]["value"])
+        return Norm(distances["distance"]["value"], timedelta(seconds=distances["duration"]["value"]))

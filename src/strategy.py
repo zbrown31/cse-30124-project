@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+
+from src import gmaps_client
 from .ride import Ride, RideStatus
 from .driver import Driver
 from .metric import Metric
@@ -16,10 +18,11 @@ class Dispatcher:
         else:
             self.end_time = self.start_time
         self.drivers = drivers
-        self.available_drivers = drivers
+        self.available_drivers = drivers[:3]
         self.strategy = strategy
         self.clock = Clock(self.start_time, self.end_time)
         self.canceller = canceller
+        self.mapper = gmaps_client.GMapsClient()
     
     def assign_ride(self, ride:Ride) -> None:
         assigned_driver = self.strategy.choose_driver(ride, self.drivers)
@@ -32,7 +35,6 @@ class Dispatcher:
         resolved_rides: list[Ride] = []
         while len(resolved_rides) < len(self.ride_requests):
             current_time = self.clock.get_current_time()
-            print(current_time)
             while ride_start_index < len(self.ride_requests) and self.ride_requests[ride_start_index].request_time < current_time:
                 requested_rides.append(self.ride_requests[ride_start_index])
                 ride_start_index += 1
@@ -40,8 +42,9 @@ class Dispatcher:
             for i, ride in reversed(list(enumerate(requested_rides))):
                 ride = requested_rides[i]
                 assigned_driver = self.strategy.choose_driver(ride, self.available_drivers)
+
                 if assigned_driver is not None:
-                    ride.match(assigned_driver, current_time)
+                    ride.match(assigned_driver, current_time, timedelta(seconds=0))
                     active_rides.append(ride)
                     self.available_drivers.remove(assigned_driver)
                     requested_rides.pop(i)
@@ -56,7 +59,7 @@ class Dispatcher:
                 if ride.status == RideStatus.MATCHED and current_time - ride.match_time >= ride.time_to_pickup:
                     ride.picked_up(current_time)
                 if ride.status == RideStatus.IN_RIDE and current_time - ride.pickup_time >= ride.trip.norm.duration:
-                    ride.arrived()
+                    ride.arrived(current_time)
                     resolved_rides.append(ride)
                     self.available_drivers.append(ride.driver)
                     active_rides.pop(i)
