@@ -36,7 +36,7 @@ class Ride:
         self.match_time = time
         self.time_to_pickup = time_to_pickup
         self.driver.add_ride(self)
-        
+
 
     def picked_up(self, time:datetime) -> None:
         self.status = RideStatus.IN_RIDE
@@ -45,6 +45,7 @@ class Ride:
     def arrived(self, time:datetime) -> None:
         self.status = RideStatus.COMPLETED
         self.arrived_time = time
+        self.driver.finish_current_ride()
 
     def set_status(self, status:RideStatus) -> None:
         self.status = status

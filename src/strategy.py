@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+import enum
 import time
+from collections import deque
 
 from src import gmaps_client
 from .ride import Ride, RideStatus
@@ -8,6 +10,9 @@ from .driver import Driver
 from .metric import Metric
 from .clock import Clock
 from .canceller import Canceller, NormalCanceller
+from src import driver
+
+from src import ride
 
 class Dispatcher:
     def __init__(self, ride_requests: list[Ride], drivers: list[Driver], strategy:"Strategy", canceller: Canceller):
@@ -19,7 +24,7 @@ class Dispatcher:
         else:
             self.end_time = self.start_time
         self.drivers = drivers
-        self.online_drivers = drivers[:3]
+        self.online_drivers = drivers
         self.strategy = strategy
         self.clock = Clock(self.start_time, self.end_time)
         self.canceller = canceller
@@ -41,20 +46,21 @@ class Dispatcher:
                 requested_rides.append(self.ride_requests[ride_start_index])
                 ride_start_index += 1
 
-            for i, ride in reversed(list(enumerate(requested_rides))):
-                ride = requested_rides[i]
-                assigned_driver = self.strategy.choose_driver(ride, self.online_drivers)
+            driver_assignments = self.strategy.assign_drivers(requested_rides, self.online_drivers)
 
-                if assigned_driver is not None:
-                    if assigned_driver.current_ride is not None:
-                        time_to_pickup = self.mapper.get_distance(assigned_driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
-                    else:
-                        time_to_pickup = timedelta(seconds=60 * 7)
-                    ride.match(assigned_driver, current_time, time_to_pickup)
-                    active_rides.append(ride)
-                    requested_rides.pop(i)
+            for assignment in driver_assignments:
+                ride = assignment[0]
+                driver = assignment[1]
+                if driver.current_ride is not None:
+                    time_to_pickup = self.mapper.get_distance(driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
+                else:
+                    time_to_pickup = timedelta(seconds=60 * 7)
+                ride.match(driver, current_time, time_to_pickup)
+                active_rides.append(ride)
+                requested_rides.remove(ride)
 
-                elif self.canceller.will_cancel(ride, current_time):
+            for i, ride in enumerate(requested_rides):
+                if self.canceller.will_cancel(ride, current_time):
                     ride.cancel(current_time)
                     resolved_rides.append(ride)
                     requested_rides.pop(i)
@@ -72,7 +78,7 @@ class Dispatcher:
 
 class Strategy(ABC):
     @abstractmethod
-    def choose_driver(self, ride: Ride, drivers: list[Driver]) -> Driver | None:
+    def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride,Driver]] | None:
         pass
 
     def evaluate(self, metrics: list[Metric], rides: list[Ride], drivers: list[Driver]) -> list[Metric]:
@@ -83,42 +89,25 @@ class Strategy(ABC):
         return metrics
 
 class BaseStrategy(Strategy):
-    def choose_driver(self, ride: Ride, drivers: list[Driver]) -> Driver | None:
-        available_drivers = list(filter(lambda x: drivers.current_ride is None or len(drivers.ride_queue) == 0, drivers))
-
-        if len(available_drivers) > 0:
-            return available_drivers[0]
-        else:
-            return None
+    def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride, Driver]] | None:
+        ride_queue = deque(list(reversed(rides)))
+        available_drivers = deque(filter(lambda x: x.current_ride is None or len(x.ride_queue) == 0, drivers))
+        assignments = []
+        while len(ride_queue) > 0 and len(available_drivers) > 0:
+            assignments.append((ride_queue.popleft(), available_drivers.popleft()))
+        return assignments
         
 class GreedyStrategy(Strategy):
     def __init__(self, mapper: gmaps_client.GMapsClient):
         self.mapper = mapper
-    def choose_driver(self, ride: Ride, drivers: list[Driver]) -> Driver | None:
-        available_drivers = list(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
-        pickup_times = []
-        for driver in available_drivers:
-            if driver.current_ride is not None:
-                time_to_pickup = self.mapper.get_distance(driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
-            elif len(driver.ride_history) > 0:
-                time_to_pickup = self.mapper.get_distance(driver.ride_history[-1].trip.destination.coordinates, ride.trip.start.coordinates).duration
-            else:
-                time_to_pickup = timedelta(seconds=60 * 7)
-            pickup_times.append(time_to_pickup)
-        if len(pickup_times) > 0:
-            return sorted(list(zip(pickup_times, drivers)), key=lambda x: x[0])[0][1]
-        else:
-            return None
+    def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride,Driver]] | None:
+        ride_queue = deque(rides)
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
+        
+        assignments = []
 
-class BatchedGreedyStrategy(Strategy):
-    def __init__(self, mapper: gmaps_client.GMapsClient, batch_time: int):
-        self.mapper = mapper
-        self.batch_time = batch_time
-        self.step = -1
-    def choose_driver(self, ride: Ride, drivers: list[Driver]) -> Driver | None:
-        self.step += 1
-        if (self.step % self.batch_time == 0):
-            available_drivers = list(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
+        while len(ride_queue) > 0 and len(available_drivers) > 0: 
+            ride = ride_queue[0]
             pickup_times = []
             for driver in available_drivers:
                 if driver.current_ride is not None:
@@ -129,8 +118,40 @@ class BatchedGreedyStrategy(Strategy):
                     time_to_pickup = timedelta(seconds=60 * 7)
                 pickup_times.append(time_to_pickup)
             if len(pickup_times) > 0:
-                return sorted(list(zip(pickup_times, drivers)), key=lambda x: x[0])[0][1]
-            else:
-                return None
+                assignments.append((ride, sorted(list(zip(pickup_times, available_drivers)), key=lambda x: x[0])[0][1]))
+                ride_queue.popleft()
+                available_drivers.popleft()
+        return assignments
+
+
+class BatchedGreedyStrategy(Strategy):
+    def __init__(self, mapper: gmaps_client.GMapsClient, batch_time: int):
+        self.mapper = mapper
+        self.batch_time = batch_time
+        self.step = -1
+    def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride,Driver]] | None:
+        self.step += 1
+        if (self.step % self.batch_time == 0):
+            ride_queue = deque(rides)
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
+        
+        assignments = []
+
+        while len(ride_queue) > 0 and len(available_drivers) > 0: 
+            ride = ride_queue[0]
+            pickup_times = []
+            for driver in available_drivers:
+                if driver.current_ride is not None:
+                    time_to_pickup = self.mapper.get_distance(driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
+                elif len(driver.ride_history) > 0:
+                    time_to_pickup = self.mapper.get_distance(driver.ride_history[-1].trip.destination.coordinates, ride.trip.start.coordinates).duration
+                else:
+                    time_to_pickup = timedelta(seconds=60 * 7)
+                pickup_times.append(time_to_pickup)
+            if len(pickup_times) > 0:
+                assignments.append((ride, sorted(list(zip(pickup_times, available_drivers)), key=lambda x: x[0])[0][1]))
+                ride_queue.popleft()
+                available_drivers.popleft()
+            return assignments
         else:
-            return None
+            return []

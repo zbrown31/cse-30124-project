@@ -15,7 +15,7 @@ class Driver:
     
     def finish_current_ride(self) -> None:
         self.ride_history.append(self.current_ride)
-        if self.ride_queue.empty():
+        if len(self.ride_queue) == 0:
             self.current_ride = None
         else:
             self.current_ride = self.ride_queue.popleft()
