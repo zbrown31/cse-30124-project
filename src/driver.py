@@ -3,11 +3,11 @@ from collections import deque
 class Driver:
     def __init__(self, name):
         self.name = name
-        self.current_ride: str | None = None
-        self.ride_queue: deque[str] = deque()
-        self.ride_history: list[str] = []
+        self.current_ride = None
+        self.ride_queue: deque = deque()
+        self.ride_history: list = []
     
-    def add_ride(self, ride: str) -> None:
+    def add_ride(self, ride) -> None:
         if self.current_ride is None:
             self.current_ride = ride
         else:
@@ -20,8 +20,8 @@ class Driver:
         else:
             self.current_ride = self.ride_queue.popleft()
 
-    def get_ride_history(self) -> list[str]:
+    def get_ride_history(self) -> list:
         return self.ride_history
     
-    def get_ride_queue(self) -> deque[str]:
+    def get_ride_queue(self) -> deque:
         return self.ride_queue
