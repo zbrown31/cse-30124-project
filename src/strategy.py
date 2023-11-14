@@ -15,7 +15,7 @@ from src import driver
 from src import ride
 
 class Dispatcher:
-    def __init__(self, ride_requests: list[Ride], drivers: list[Driver], strategy:"Strategy", canceller: Canceller):
+    def __init__(self, ride_requests: list[Ride], drivers: list[Driver], strategy:"Strategy", canceller: Canceller, mapper: gmaps_client.GMapsClient):
         self.ride_requests = sorted(ride_requests, key= lambda x: x.request_time)
         self.start_time = self.ride_requests[0].request_time
         resolved_time = self.ride_requests[-1].get_resolved_time()
@@ -28,7 +28,7 @@ class Dispatcher:
         self.strategy = strategy
         self.clock = Clock(self.start_time, self.end_time)
         self.canceller = canceller
-        self.mapper = gmaps_client.GMapsClient()
+        self.mapper = mapper
     
     def assign_ride(self, ride:Ride) -> None:
         assigned_driver = self.strategy.choose_driver(ride, self.drivers)
@@ -77,12 +77,16 @@ class Dispatcher:
         return resolved_rides
 
 class Strategy(ABC):
+    def __init__(self, mapper: gmaps_client.GMapsClient):
+        self.mapper = mapper
+
     @abstractmethod
     def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride,Driver]] | None:
         pass
 
     def evaluate(self, metrics: list[Metric], rides: list[Ride], drivers: list[Driver]) -> list[Metric]:
-        dispatcher = Dispatcher(rides, drivers, self, NormalCanceller(10*60, 5*60))
+        self.mapper.initialize_cache(list(map(lambda x: (x.trip.start, x.trip.destination), rides)))
+        dispatcher = Dispatcher(rides, drivers, self, NormalCanceller(10*60, 5*60), self.mapper)
         assignments = dispatcher.simulate_rides()
         for metric in metrics:
             metric.calculate(ride_assignments=assignments)

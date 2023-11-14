@@ -13,11 +13,3 @@ class Location:
     
     def norm(self, other:"Location") -> Norm:
         return GMapsClient().get_distance(self.coordinates, other.coordinates)
-
-    @staticmethod
-    def get_location(name: str, address:str) -> "Location":
-        return Location(name=name, address=address, coordinates=GMapsClient().address_to_coordinates(address=address))
-
-    @staticmethod
-    def get_location(name:str, coordinates: Coordinates) -> "Location":
-        return Location(name=name, address=GMapsClient().coordinates_to_address(coordinates=coordinates), coordinates=coordinates)
