@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 from datetime import datetime, timedelta
 import enum
 import time
@@ -54,7 +55,7 @@ class Dispatcher:
                 if driver.current_ride is not None:
                     time_to_pickup = self.mapper.get_distance(driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
                 else:
-                    time_to_pickup = timedelta(seconds=60 * 7)
+                    time_to_pickup = timedelta(seconds=(60 * 7) * (np.random.standard_normal() ** 2))
                 ride.match(driver, current_time, time_to_pickup)
                 active_rides.append(ride)
                 requested_rides.remove(ride)
