@@ -7,3 +7,9 @@ class Coordinates:
 
     def to_tuple(self) -> tuple[str,str]:
         return (self.latitude, self.longitude)
+    
+    def __hash__(self) -> int:
+        return hash((self.latitude, self.longitude))
+
+    def __eq__(self, other: "Coordinates") -> bool:
+        return self.latitude == other.latitude and self.longitude == other.longitude

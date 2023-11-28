@@ -4,3 +4,11 @@ class Norm:
     def __init__(self, distance: int, duration: timedelta):
         self.distance = distance
         self.duration = duration
+    
+    def toJson(self) -> dict[str, int]:
+        return {'distance' : self.distance, 'duration' : self.duration.total_seconds()}
+    
+    @staticmethod
+    def fromJson(json) -> "Norm":
+        return Norm(int(json['distance']), timedelta(seconds=int(json['duration'])))
+        

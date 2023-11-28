@@ -1,4 +1,4 @@
-import os
+import os, json, sys
 import googlemaps
 from .coordinates import Coordinates
 from .norm import Norm
@@ -10,7 +10,14 @@ class GMapsClient:
         load_dotenv()
 
         self.client = googlemaps.Client(key=os.getenv("GMAPS_API_KEY"))
+
         self.cache = {}
+
+        if os.path.exists("data/distance_cache.json"):
+            with open("data/distance_cache.json") as fh:
+                self.cache = json.load(fh)
+            for key in self.cache:
+                self.cache[key] = Norm.fromJson(self.cache[key])
     
     def address_to_coordinates(self, address: str) -> Coordinates:
         geocode_result = self.client.geocode(address)
@@ -21,19 +28,32 @@ class GMapsClient:
         return reverse_geocode_results["results"][0]["formatted_address"]
     
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
-        if start.to_tuple() in self.cache and destination.to_tuple() in self.cache[start]:
-            return self.cache[start.to_tuple()][destination.to_tuple()]
+        if hash((start,destination)) in self.cache:
+            return self.cache[hash((start,destination))]
         distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric")
         distances = distance_matrix_results["rows"][0]["elements"][0]
-        return Norm(distances["distance"]["value"], timedelta(seconds=distances["duration"]["value"]))
+        if distances['status'] != 'ZERO_RESULTS':
+            return Norm(distances["distance"]["value"], timedelta(seconds=distances["duration"]["value"]))
+        else:
+            return Norm(2**63, timedelta(seconds=420))
     
     def initialize_cache(self, location_pairs: list[tuple]):
+        index = 0
         for start, destination in location_pairs:
+            index += 1
+            if hash((start.coordinates, destination.coordinates)) in self.cache:
+                continue 
             try:
-                norm = self.get_distance(start.coordinates.to_tuple(), destination.coordinates.to_tuple())
-                self.cache[start][destination] = norm
-                self.cache[destination][start] = norm
-            except:
+                norm = self.get_distance(start.coordinates, destination.coordinates)
+                self.cache[hash((start.coordinates,destination.coordinates))] = norm
+                self.cache[hash((destination.coordinates,start.coordinates))] = norm
+            except Exception as ex:
                 print(f"Failed to get distance between {start.name} and {destination.name}")
+                print(ex)
+
+        with open("data/distance_cache.json", "w") as fh:
+            json_serializable_cache = dict(map(lambda x: (x[0], x[1].toJson()), self.cache.items()))
+            json.dump(json_serializable_cache, fh)
+            
         
 

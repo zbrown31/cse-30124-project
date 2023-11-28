@@ -8,6 +8,8 @@ from .location import Location
 from .ride import Ride
 from .norm import Norm
 
+PRECISION = 3
+
 class DataReader:
     def __init__(self, data_file:str):
         self.data_file:str = data_file
@@ -45,7 +47,7 @@ class DataReader:
     @staticmethod
     def parse_location_json(location_dict:dict) -> Location | None:
         try: 
-            return Location(name=location_dict["name"], address=location_dict["address"], coordinates=Coordinates(location_dict["coordinates"]["value"]["_latitude"], location_dict["coordinates"]["value"]["_longitude"]))
+            return Location(name=location_dict["name"], address=location_dict["address"], coordinates=Coordinates(round(int(location_dict["coordinates"]["value"]["_latitude"]), PRECISION), round(int(location_dict["coordinates"]["value"]["_longitude"]), PRECISION)))
         except KeyError as ex:
             return None
         
