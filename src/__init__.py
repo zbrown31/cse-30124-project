@@ -10,5 +10,6 @@ from .data_reader import DataReader
 from .clock import Clock
 from .metric import Metric
 from .norm import Norm
+from .experiment import NumDriversExperiment
 
-__all__ = ['Location', 'Coordinates', 'Rider', 'Driver', 'Trip', 'Ride', 'RideStatus', 'Strategy', 'Dispatcher', 'GMapsClient', 'DataReader', 'Clock', 'Metric', 'Norm']
+__all__ = ['Location', 'Coordinates', 'Rider', 'Driver', 'Trip', 'Ride', 'RideStatus', 'Strategy', 'Dispatcher', 'GMapsClient', 'DataReader', 'Clock', 'Metric', 'Norm', 'NumDriversExperiment']

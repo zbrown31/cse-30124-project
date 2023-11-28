@@ -51,9 +51,10 @@ class GMapsClient:
                 print(f"Failed to get distance between {start.name} and {destination.name}")
                 print(ex)
 
-        with open("data/distance_cache.json", "w") as fh:
-            json_serializable_cache = dict(map(lambda x: (x[0], x[1].toJson()), self.cache.items()))
-            json.dump(json_serializable_cache, fh)
+        # with open("data/distance_cache.json", "w") as fh:
+        #     fh.seek(0)
+        #     json_serializable_cache = dict(map(lambda x: (int(x[0]), x[1].toJson()), self.cache.items()))
+        #     json.dump(json_serializable_cache, fh)
             
         
 
