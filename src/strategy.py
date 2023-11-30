@@ -42,7 +42,7 @@ class Dispatcher:
         resolved_rides: list[Ride] = []
         while len(resolved_rides) < len(self.ride_requests):
             current_time = self.clock.get_current_time()
-            #print(current_time)
+            # print(current_time)
             while ride_start_index < len(self.ride_requests) and self.ride_requests[ride_start_index].request_time < current_time:
                 requested_rides.append(self.ride_requests[ride_start_index])
                 ride_start_index += 1

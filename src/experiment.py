@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+import copy
 import concurrent.futures
 
 from numpy import maximum
@@ -36,7 +36,7 @@ class NumDriversExperiment(Experiment):
         output_by_driver_number = {}
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-            trial_futures = {pool.submit(worker_func, self.strategy_type(self.mapper), self.rides, self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
+            trial_futures = {pool.submit(worker_func, self.strategy_type(self.mapper), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
             for future in concurrent.futures.as_completed(trial_futures):
                 output = trial_futures[future]
                 try:
