@@ -22,8 +22,8 @@ class Experiment(ABC):
 
 class NumDriversExperiment(Experiment):
     
-    def run(self, strategy_type: type, min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
-        self.strategy_type = strategy_type
+    def run(self, strategy_types: list[type], min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
+        self.strategy_types = strategy_types
         self.min_drivers = min_drivers
         self.max_drivers = max_drivers
 
@@ -35,33 +35,38 @@ class NumDriversExperiment(Experiment):
             print("\n\n\n")
             return {num_drivers:output}
         
-        output_by_driver_number = {}
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-            trial_futures = {pool.submit(worker_func, self.strategy_type(self.mapper), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
-            for future in concurrent.futures.as_completed(trial_futures):
-                output = trial_futures[future]
-                try:
-                    output_by_driver_number = {**output_by_driver_number, **future.result()}
-                except Exception as exc:
-                    print('%r generated an exception: %s' % (output, exc))
+       
+        results_by_strategy = {}
+        for strategy_type in self.strategy_types:
+            output_by_driver_number = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+                trial_futures = {pool.submit(worker_func, strategy_type(self.mapper), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
+                for future in concurrent.futures.as_completed(trial_futures):
+                    try:
+                        output_by_driver_number = {**output_by_driver_number, **future.result()}
+                        results_by_strategy[strategy_type] = output_by_driver_number
+                    except Exception as exc:
+                        print('Generated an exception: %s' % (exc))
         
-        self.result = output_by_driver_number
-        return output_by_driver_number
+        self.result = results_by_strategy
+        return results_by_strategy
     
     def display(self):
         if self.result is None:
             print("No results to display")
             return
         else:
-            metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result.items()])))
-            num_drivers_available = metrics[0]
-            match_percentage = metrics[1]
-            plt.plot(num_drivers_available, match_percentage)
+            traces = []
+            for strategy in self.strategy_types:
+                metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))
+                num_drivers_available = metrics[0]
+                match_percentage = metrics[1]
+                plt.plot(num_drivers_available, match_percentage, label=strategy.__name__)
             plt.xlabel("Number of Drivers Available")
             plt.ylabel("Match Percentage")
             plt.xticks(num_drivers_available)
             plt.title("Match Percentage by Number of Drivers")
+            plt.legend()
             plt.show()
 
         
