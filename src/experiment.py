@@ -55,7 +55,6 @@ class NumDriversExperiment(Experiment):
             return
         else:
             metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result.items()])))
-            print(metrics)
             num_drivers_available = metrics[0]
             match_percentage = metrics[1]
             plt.plot(num_drivers_available, match_percentage)

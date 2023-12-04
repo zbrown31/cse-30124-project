@@ -107,7 +107,7 @@ class GreedyStrategy(Strategy):
         self.mapper = mapper
     def assign_drivers(self, rides: list[Ride], drivers: list[Driver]) -> list[tuple[Ride,Driver]] | None:
         ride_queue = deque(rides)
-        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers))
         
         assignments = []
 
