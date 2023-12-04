@@ -2,14 +2,14 @@ from src import DataReader
 from src import experiment
 from src.canceller import NormalCanceller
 from src.gmaps_client import GMapsClient
-from src.strategy import Dispatcher, BaseStrategy, GreedyStrategy
+from src.strategy import BatchedGreedyStrategy, BatchedHungarian, Dispatcher, BaseStrategy, GreedyStrategy, HungarianStrategy
 from src.metric import MatchRate, MatchTime, CancelRate, RideDistributionByDriver
 from src.experiment import NumDriversExperiment
 
 data = DataReader('/Users/zachbrown/Desktop/Work/Desi/Tech/Code/firebase_backups/backup_10_30_23.json')
 
 mapper = GMapsClient()
-base_strategy = GreedyStrategy(mapper)
+base_strategy = BatchedHungarian(mapper, 3)
 # base_strategy = BaseStrategy()
 
 online_drivers = data.resources["Drivers"]
