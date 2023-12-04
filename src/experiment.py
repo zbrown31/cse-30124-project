@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import copy
 import concurrent.futures
+import matplotlib.pyplot as plt
 
 from numpy import maximum
 
@@ -17,9 +18,10 @@ class Experiment(ABC):
         self.mapper = mapper
         self.rides = rides
         self.drivers = drivers
+        self.result: dict[int, list[Metric]] | None = {}
 
 class NumDriversExperiment(Experiment):
-  
+    
     def run(self, strategy_type: type, min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
         self.strategy_type = strategy_type
         self.min_drivers = min_drivers
@@ -44,7 +46,23 @@ class NumDriversExperiment(Experiment):
                 except Exception as exc:
                     print('%r generated an exception: %s' % (output, exc))
         
-
+        self.result = output_by_driver_number
         return output_by_driver_number
+    
+    def display(self):
+        if self.result is None:
+            print("No results to display")
+            return
+        else:
+            metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result.items()])))
+            print(metrics)
+            num_drivers_available = metrics[0]
+            match_percentage = metrics[1]
+            plt.plot(num_drivers_available, match_percentage)
+            plt.xlabel("Number of Drivers Available")
+            plt.ylabel("Match Percentage")
+            plt.xticks(num_drivers_available)
+            plt.title("Match Percentage by Number of Drivers")
+            plt.show()
 
         

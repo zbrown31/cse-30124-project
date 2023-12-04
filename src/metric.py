@@ -6,6 +6,8 @@ from .ride import Ride, RideStatus
 from .driver import Driver
 
 class Metric(ABC):
+    def __init__(self) -> "Metric":
+        self.value = None
 
     @abstractmethod
     def calculate(self, ride_assignments: list[Ride]) -> None:
@@ -16,9 +18,6 @@ class Metric(ABC):
         pass
 
 class MatchRate(Metric):
-    def __init__(self) -> None:
-        self.value = None
-
     def calculate(self, ride_assignments: list[Ride]) -> None:
         self.value = np.mean(list(map(lambda x: int(x.status == RideStatus.COMPLETED),ride_assignments)))
     
@@ -26,8 +25,6 @@ class MatchRate(Metric):
         print(f"Match Rate: {round(self.value * 100, 3)}%")
 
 class CancelRate(Metric):
-    def __init__(self) -> None:
-        self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
         self.value = np.mean(list(map(lambda x: int(x.status == RideStatus.CANCELLED),ride_assignments)))
@@ -36,8 +33,6 @@ class CancelRate(Metric):
         print(f"Cancel Rate: {round(self.value * 100, 3)}%")
 
 class MatchTime(Metric):
-    def __init__(self) -> None:
-        self.value = None
 
     def calculate(self, ride_assignments: list[Ride]) -> None:
         self.value = np.mean(list(filter(lambda x: x is not None, map(lambda x: x.get_time_to_match(),ride_assignments))))
@@ -47,6 +42,7 @@ class MatchTime(Metric):
 
 class RideDistributionByDriver(Metric):
     def __init__(self, drivers: list[Driver]) -> None:
+        super()
         self.mean = None
         self.std = None
         self.drivers = drivers

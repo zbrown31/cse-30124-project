@@ -20,8 +20,4 @@ online_drivers = data.resources["Drivers"]
 
 experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
 output = experiment.run(GreedyStrategy, 1, 20)
-for num_drivers in sorted(output.keys()):
-    print(f"Number of Drivers: {num_drivers}")
-    for metric in output[num_drivers]:
-        metric.display()
-    print("\n\n\n")
+experiment.display()
