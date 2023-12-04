@@ -14,10 +14,10 @@ base_strategy = GreedyStrategy(mapper)
 
 online_drivers = data.resources["Drivers"]
 
-# results = base_strategy.evaluate(metrics=[MatchRate(), MatchTime(), CancelRate(), RideDistributionByDriver(online_drivers)], rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
+results = base_strategy.evaluate(metrics=[MatchRate(), MatchTime(), CancelRate(), RideDistributionByDriver(online_drivers)], rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
 
-# [metric.display() for metric in results]
+[metric.display() for metric in results]
 
-experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-output = experiment.run(GreedyStrategy, 1, 20)
-experiment.display()
+# experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
+# output = experiment.run(GreedyStrategy, 1, 20)
+# experiment.display()
