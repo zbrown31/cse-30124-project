@@ -1,12 +1,9 @@
 from src import DataReader, experiment
-from src.canceller import NormalCanceller
 from src.experiment import BatchSizeExperiment, NumDriversExperiment
-from src.gmaps_client import GMapsClient
-from src.metric import (CancelRate, MatchRate, MatchTime,
-                        RideDistributionByDriver)
-from src.strategy import (BaseStrategy, BatchedGreedyStrategy,
-                          BatchedHungarian, Dispatcher, GreedyStrategy,
-                          HungarianStrategy)
+from src.utils import GMapsClient
+from src.simulation import NormalCanceller
+from src.simulation.metric import *
+from src.simulation.strategies import *
 
 data = DataReader('/Users/zachbrown/Desktop/Work/Desi/Tech/Code/firebase_backups/backup_10_30_23.json')
 
@@ -25,5 +22,5 @@ online_drivers = data.resources["Drivers"]
 # experiment.display()
 
 experiment = BatchSizeExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-output = experiment.run([(BatchedGreedyStrategy, {}), (BatchedHungarian, {})], 1, 1000, 5)
+output = experiment.run([(BatchedGreedyStrategy, {}), (BatchedHungarianStrategy, {})], 1, 1000, 5)
 experiment.display()

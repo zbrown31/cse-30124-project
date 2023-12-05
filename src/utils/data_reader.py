@@ -3,12 +3,8 @@ import pathlib
 from datetime import datetime, timedelta
 from typing import Hashable
 
-from .coordinates import Coordinates
-from .driver import Driver
-from .location import Location
-from .norm import Norm
-from .ride import Ride
-from .trip import Trip
+from ..models import Coordinates, Driver, Location, Norm, Ride, Trip
+
 
 PRECISION = 3
 

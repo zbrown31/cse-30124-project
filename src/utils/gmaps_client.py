@@ -1,8 +1,6 @@
 import os, json
 import googlemaps
-from .coordinates import Coordinates
-from .location import Location
-from .norm import Norm
+from ..models import Coordinates, Location, Norm
 from dotenv import load_dotenv
 from datetime import timedelta
 

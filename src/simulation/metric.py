@@ -3,8 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from .driver import Driver
-from .ride import Ride, RideStatus
+from src.models import Driver, Ride, RideStatus
 
 
 class Metric(ABC):

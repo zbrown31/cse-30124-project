@@ -6,12 +6,11 @@ from typing import Hashable
 
 import matplotlib.pyplot as plt
 
-from .driver import Driver
-from .gmaps_client import GMapsClient
-from .metric import (CancelRate, CancelTime, MatchRate, MatchTime, Metric,
+from src.models import Ride, Driver
+from src.utils import GMapsClient
+from src.simulation.metric import (CancelRate, CancelTime, MatchRate, MatchTime, Metric,
                      RideDistributionByDriver)
-from .ride import Ride
-from .strategy import BatchedStrategy, Strategy
+from src.simulation import BatchedStrategy, Strategy
 
 
 class Experiment(ABC):

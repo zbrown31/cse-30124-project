@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from enum import Enum
 
-from .canceller import Canceller
 from .trip import Trip
 
 
@@ -48,8 +47,8 @@ class Ride:
     def set_status(self, status:RideStatus) -> None:
         self.status = status
     
-    def set_cancel_time(self, current_time:datetime, canceller:Canceller):
-        self.expected_cancel_time = canceller.get_cancel_time(current_time)
+    def set_cancel_time(self, cancel_time: datetime):
+        self.expected_cancel_time = cancel_time
 
     def will_cancel(self, current_time: datetime) -> bool:
         if self.expected_cancel_time is not None:
