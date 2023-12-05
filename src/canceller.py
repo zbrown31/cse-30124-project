@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
-from .ride import Ride
 
 class Canceller(ABC):
     @abstractmethod
-    def will_cancel(self, ride: Ride, timestep:datetime) -> bool:
+    def get_cancel_time(self, current_time:datetime) -> bool:
         pass
 
 class NormalCanceller(Canceller):
@@ -13,6 +12,14 @@ class NormalCanceller(Canceller):
         self.mean = mean
         self.std = std
 
-    def will_cancel(self, ride: Ride, current_time: datetime) -> bool:
-        return (np.random.normal(loc=self.mean, scale=self.std) > ride.get_wait_time(current_time))
+    def get_cancel_time(self, current_time: datetime) -> bool:
+        return current_time + timedelta(seconds=np.random.normal(loc=self.mean, scale=self.std))
+    
+
+class ChiCanceller(Canceller):
+    def __init__(self, mean:float, std:float) -> None:
+        self.mean = mean
+        self.std = std
+    def get_cancel_time(self, current_time: datetime) -> bool:
+        return current_time + timedelta(seconds=(5 * 60 * np.random.chisquare(1) + 10 * 60))
     

@@ -8,7 +8,7 @@ class Clock:
         self.current_time = start_time
     
     def tick(self) -> None:
-        self.current_time = self.current_time + timedelta(minutes=1)
+        self.current_time = self.current_time + timedelta(seconds=5)
     
     def get_current_time(self) -> datetime:
         return self.current_time

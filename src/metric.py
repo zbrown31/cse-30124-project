@@ -40,6 +40,11 @@ class MatchTime(Metric):
     def display(self) -> None:
         print(f"Average Match Time:{self.value} seconds")
 
+class CancelTime(Metric):
+    def calculate(self, ride_assignments: list[Ride]) -> None:
+        self.value = np.mean(list(filter(lambda x: x is not None, map(lambda x: x.get_time_to_cancel(),ride_assignments))))
+    def display(self) -> None:
+        print(f"Average Cancel Time:{self.value} seconds")
 class RideDistributionByDriver(Metric):
     def __init__(self, drivers: list[Driver]) -> None:
         super()

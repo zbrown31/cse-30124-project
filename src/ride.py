@@ -1,5 +1,6 @@
 from src import gmaps_client
 from .driver import Driver
+from .canceller import Canceller
 from .trip import Trip
 from datetime import date, datetime, timedelta
 from enum import Enum
@@ -23,6 +24,7 @@ class Ride:
         self.arrived_time: datetime | None = None
         self.cancel_time: datetime | None = None
         self.time_to_pickup: timedelta | None = None
+        self.expected_cancel_time: datetime | None = None
     
     def cancel(self, time:datetime) -> None:
         self.status = RideStatus.CANCELLED
@@ -47,6 +49,12 @@ class Ride:
 
     def set_status(self, status:RideStatus) -> None:
         self.status = status
+    
+    def set_cancel_time(self, current_time:datetime, canceller:Canceller):
+        self.expected_cancel_time = canceller.get_cancel_time(current_time)
+
+    def will_cancel(self, current_time: datetime) -> bool:
+        return current_time > self.expected_cancel_time
     
     def get_time_to_match(self) -> int:
         if self.match_time is not None:
