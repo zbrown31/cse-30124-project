@@ -6,7 +6,7 @@ import numpy as np
 
 class Canceller(ABC):
     @abstractmethod
-    def get_cancel_time(self, current_time:datetime) -> bool:
+    def get_cancel_time(self, current_time:datetime) -> datetime:
         pass
 
 class NormalCanceller(Canceller):

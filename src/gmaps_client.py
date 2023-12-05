@@ -1,6 +1,7 @@
-import os, json, sys
+import os, json
 import googlemaps
 from .coordinates import Coordinates
+from .location import Location
 from .norm import Norm
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -11,7 +12,7 @@ class GMapsClient:
 
         self.client = googlemaps.Client(key=os.getenv("GMAPS_API_KEY"))
 
-        self.cache = {}
+        self.cache: dict[str, Norm] = {}
 
         if os.path.exists("data/distance_cache.json"):
             with open("data/distance_cache.json") as fh:
@@ -28,8 +29,8 @@ class GMapsClient:
         return reverse_geocode_results["results"][0]["formatted_address"]
     
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
-        if hash((start,destination)) in self.cache:
-            return self.cache[hash((start,destination))]
+        if str(hash((start,destination))) in self.cache:
+            return self.cache[str(hash((start,destination)))]
         distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric") # type: ignore
         distances = distance_matrix_results["rows"][0]["elements"][0]
         if distances['status'] != 'ZERO_RESULTS':
@@ -37,16 +38,16 @@ class GMapsClient:
         else:
             return Norm(2**63, timedelta(seconds=420))
     
-    def initialize_cache(self, location_pairs: list[tuple]):
+    def initialize_cache(self, location_pairs: list[tuple[Location, Location]]):
         index = 0
         for start, destination in location_pairs:
             index += 1
-            if hash((start.coordinates, destination.coordinates)) in self.cache:
+            if str(hash((start.coordinates, destination.coordinates))) in self.cache:
                 continue 
             try:
                 norm = self.get_distance(start.coordinates, destination.coordinates)
-                self.cache[hash((start.coordinates,destination.coordinates))] = norm
-                self.cache[hash((destination.coordinates,start.coordinates))] = norm
+                self.cache[str(hash((start.coordinates,destination.coordinates)))] = norm
+                self.cache[str(hash((destination.coordinates,start.coordinates)))] = norm
             except Exception as ex:
                 print(f"Failed to get distance between {start.name} and {destination.name}")
                 print(ex)

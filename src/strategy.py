@@ -23,16 +23,14 @@ class Dispatcher:
             self.end_time = resolved_time
         else:
             self.end_time = self.start_time
-        self.drivers = drivers
-        self.online_drivers = drivers
+        self.drivers = {driver: index for index, driver in enumerate(drivers)}
+        self.online_drivers = self.drivers
+        self.online_drivers_by_id = dict(list(zip(self.online_drivers.values(), self.online_drivers.keys())))
         self.strategy = strategy
         self.clock = Clock(self.start_time, self.end_time)
         self.canceller = canceller
         self.mapper = mapper
     
-    def assign_ride(self, ride: Ride) -> None:
-        assigned_driver = self.strategy.choose_driver(ride, self.drivers)
-        assigned_driver.add_ride(ride)
     
     def simulate_rides(self) -> list[Ride]:
         ride_start_index: int = 0
@@ -56,7 +54,8 @@ class Dispatcher:
                     time_to_pickup = self.mapper.get_distance(driver.current_ride.trip.destination.coordinates, ride.trip.start.coordinates).duration
                 else:
                     time_to_pickup = timedelta(seconds=(60 * 7) * (np.random.standard_normal() ** 2))
-                ride.match(driver, current_time, time_to_pickup)
+                ride.match(self.online_drivers[driver], current_time, time_to_pickup)
+                driver.add_ride(ride)
                 active_rides.append(ride)
                 requested_rides.remove(ride)
 
@@ -68,10 +67,12 @@ class Dispatcher:
 
             for i, ride in reversed(list(enumerate(active_rides))):
                 ride = active_rides[i]
-                if ride.status == RideStatus.MATCHED and current_time - ride.match_time >= ride.time_to_pickup:
+                if ride.status == RideStatus.MATCHED and ride.match_time is not None and ride.time_to_pickup is not None and current_time - ride.match_time >= ride.time_to_pickup:
                     ride.picked_up(current_time)
-                if ride.status == RideStatus.IN_RIDE and current_time - ride.pickup_time >= ride.trip.norm.duration:
+                if ride.status == RideStatus.IN_RIDE and ride.pickup_time is not None and current_time - ride.pickup_time >= ride.trip.norm.duration:
                     ride.arrived(current_time)
+                    if ride.driver_id is not None:
+                        self.online_drivers_by_id[ride.driver_id].finish_current_ride()
                     resolved_rides.append(ride)
                     active_rides.pop(i)
             self.clock.tick()
@@ -83,7 +84,7 @@ class Strategy(ABC):
         self.mapper = mapper
 
     @abstractmethod
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride,Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time:datetime) -> list[tuple[Ride,Driver]]:
         pass
 
     def evaluate(self, metrics: list[Metric], rides: list[Ride], drivers: list[Driver]) -> list[Metric]:
@@ -96,17 +97,17 @@ class Strategy(ABC):
 
 
 class BatchedStrategy(Strategy):
-    def __init__(self, mapper: gmaps_client.GMapsClient, batch_time: int) -> "GreedyStrategy":
+    def __init__(self, mapper: gmaps_client.GMapsClient, batch_time: int):
         self.mapper = mapper
         self.batch_time = batch_time
         self.step = -1
 
 
 class BaseStrategy(Strategy):
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride, Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time:datetime) -> list[tuple[Ride, Driver]]:
         ride_queue = deque(list(reversed(rides)))
-        available_drivers = deque(filter(lambda x: x.current_ride is None or len(x.ride_queue) == 0, drivers))
-        assignments = []
+        available_drivers = deque(filter(lambda x: x.current_ride is None or len(x.ride_queue) == 0, drivers.keys()))
+        assignments: list[tuple[Ride, Driver]] = []
         while len(ride_queue) > 0 and len(available_drivers) > 0:
             assignments.append((ride_queue.popleft(), available_drivers.popleft()))
         return assignments
@@ -116,13 +117,13 @@ class BaseStrategy(Strategy):
 class GreedyStrategy(Strategy):
     def __init__(self, mapper: gmaps_client.GMapsClient):
         self.mapper = mapper
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time: datetime) -> list[tuple[Ride, Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time: datetime) -> list[tuple[Ride, Driver]]:
         ride_queue = deque(rides)
-        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers))
-        assignments = []
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers.keys()))
+        assignments: list[tuple[Ride, Driver]] = []
         while len(ride_queue) > 0 and len(available_drivers) > 0:
             ride = ride_queue[0]
-            pickup_times = []
+            pickup_times: list[timedelta] = []
             for driver in available_drivers:
                 pickup_times.append(driver.get_time_away(self.mapper, ride.trip.start, current_time))
             if len(pickup_times) > 0:
@@ -133,18 +134,18 @@ class GreedyStrategy(Strategy):
 
 
 class BatchedGreedyStrategy(BatchedStrategy):
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride,Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time:datetime) -> list[tuple[Ride,Driver]]:
         self.step += 1
         if (self.step % self.batch_time != 0):
             return []
         ride_queue = deque(rides)
-        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers.keys()))
         
-        assignments = []
+        assignments: list[tuple[Ride, Driver]] = []
 
         while len(ride_queue) > 0 and len(available_drivers) > 0:
             ride = ride_queue[0]
-            pickup_times = []
+            pickup_times: list[timedelta] = []
             for driver in available_drivers:
                 pickup_times.append(driver.get_time_away(self.mapper, ride.trip.start, current_time))
             if len(pickup_times) > 0:
@@ -156,32 +157,34 @@ class BatchedGreedyStrategy(BatchedStrategy):
             return []
 
 class HungarianStrategy(Strategy):
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time: datetime) -> list[tuple[Ride, Driver]] | None:
-        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers))
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time: datetime) -> list[tuple[Ride, Driver]]:
+        available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers.keys()))
         if len(rides) == 0 or len(available_drivers) == 0:
             return []
         cost_matrix = np.zeros(shape=(len(rides), len(drivers)))
+        drivers_list = list(drivers.keys())
         for ride_index, ride in enumerate(rides):
-            for driver_index, driver in enumerate(drivers):
+            for driver_index, driver in enumerate(drivers_list):
                 cost_matrix[ride_index, driver_index] = driver.get_time_away(self.mapper, ride.trip.start, current_time).total_seconds()
-        row_indexes, col_indexes = optimize.linear_sum_assignment(cost_matrix)
-        return list(map(lambda x: (rides[x[0]], drivers[x[1]]), list(zip(list(row_indexes), list(col_indexes)))))
+        row_indexes, col_indexes= optimize.linear_sum_assignment(cost_matrix) #ignore: type
+        return list(map(lambda x: (rides[x[0]], drivers_list[x[1]]), list(zip(list(row_indexes), list(col_indexes)))))
 
 
 class BatchedHungarian(BatchedStrategy):
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time: datetime) -> list[tuple[Ride, Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: dict[Driver, int], current_time: datetime) -> list[tuple[Ride, Driver]]:
         self.step += 1
         if self.step % self.batch_time != 0:
             return []
         else:
-            available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers))
+            available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers.keys()))
             if len(rides) == 0 or len(available_drivers) == 0:
                 return []
             cost_matrix = np.zeros(shape=(len(rides), len(drivers)))
+            drivers_list = list(drivers.keys())
             for ride_index, ride in enumerate(rides):
-                for driver_index, driver in enumerate(drivers):
+                for driver_index, driver in enumerate(drivers_list):
                     cost_matrix[ride_index, driver_index] = driver.get_time_away(self.mapper, ride.trip.start, current_time).total_seconds()
-            row_indexes, col_indexes = optimize.linear_sum_assignment(cost_matrix)
-            return list(map(lambda x: (rides[x[0]], drivers[x[1]]), list(zip(list(row_indexes), list(col_indexes)))))
+            row_indexes, col_indexes = optimize.linear_sum_assignment(cost_matrix) #ignore: type
+            return list(map(lambda x: (rides[x[0]], drivers_list[x[1]]), list(zip(list(row_indexes), list(col_indexes)))))
 
 

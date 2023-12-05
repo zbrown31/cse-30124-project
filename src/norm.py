@@ -9,6 +9,6 @@ class Norm:
         return {'distance' : self.distance, 'duration' : self.duration.total_seconds()}
     
     @staticmethod
-    def fromJson(json) -> "Norm":
+    def fromJson(json: dict[str, float]) -> "Norm":
         return Norm(int(json['distance']), timedelta(seconds=int(json['duration'])))
         

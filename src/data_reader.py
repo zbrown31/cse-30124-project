@@ -1,6 +1,7 @@
 import json
 import pathlib
 from datetime import datetime, timedelta
+from typing import Hashable
 
 from .coordinates import Coordinates
 from .driver import Driver
@@ -33,28 +34,31 @@ class DataReader:
     
         
     @staticmethod
-    def parse_driver_json(driver_dict: dict) -> Driver | None:
+    def parse_driver_json(driver_dict: dict[str, Hashable]) -> Driver | None:
         try:
             return Driver(driver_dict.get("uid"))
         except KeyError as ex:
+            print(f"{ex}")
             return None
         
     @staticmethod
-    def parse_location_json(location_dict:dict) -> Location | None:
+    def parse_location_json(location_dict:dict[str, Hashable]) -> Location | None:
         try: 
-            return Location(name=location_dict["name"], address=location_dict["address"], coordinates=Coordinates(round(int(location_dict["coordinates"]["value"]["_latitude"]), PRECISION), round(int(location_dict["coordinates"]["value"]["_longitude"]), PRECISION)))
+            return Location(name=str(location_dict["name"]), address=str(location_dict["address"]), coordinates=Coordinates(round(int(location_dict["coordinates"]["value"]["_latitude"]), PRECISION), round(int(location_dict["coordinates"]["value"]["_longitude"]), PRECISION)))
         except KeyError as ex:
+            print(f"{ex}")
             return None
         
     @staticmethod
-    def parse_trip_json(trip_dict:dict) -> Trip:
+    def parse_trip_json(trip_dict:dict[str, Hashable]) -> Trip | None:
         try:
             return Trip(start=DataReader.parse_location_json(trip_dict["start_location"]), destination=DataReader.parse_location_json(trip_dict["destination_location"]), norm=Norm(trip_dict["distance"], timedelta(seconds=int(trip_dict["estimated_time"]))))
         except KeyError as ex:
+            print(f"{ex}")
             return None
         
     @staticmethod
-    def parse_ride_json(ride_dict:dict) -> Ride | None:
+    def parse_ride_json(ride_dict:dict[str, Hashable]) -> Ride | None:
         if not 'request_time' in ride_dict:
             return None
-        return Ride(trip=DataReader.parse_trip_json(trip_dict=ride_dict.get("trip",{})), price=ride_dict.get("price",0), request_time=datetime.fromtimestamp(ride_dict['request_time']['value']['_seconds']), driver=DataReader.parse_driver_json(driver_dict=ride_dict.get("driver", {})))
+        return Ride(trip=DataReader.parse_trip_json(trip_dict=ride_dict.get("trip",{})), price=ride_dict.get("price",0), request_time=datetime.fromtimestamp(ride_dict['request_time']['value']['_seconds']))

@@ -1,18 +1,17 @@
 import concurrent.futures
 import copy
 import os
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Hashable
 
 import matplotlib.pyplot as plt
-from numpy import maximum
 
 from .driver import Driver
 from .gmaps_client import GMapsClient
 from .metric import (CancelRate, CancelTime, MatchRate, MatchTime, Metric,
                      RideDistributionByDriver)
 from .ride import Ride
-from .strategy import BatchedStrategy, GreedyStrategy, Strategy
+from .strategy import BatchedStrategy, Strategy
 
 
 class Experiment(ABC):
@@ -20,11 +19,11 @@ class Experiment(ABC):
         self.mapper = mapper
         self.rides = rides
         self.drivers = drivers
-        self.result: dict[type, dict[Hashable, list[Metric]]] | None = {}
+        self.result: dict[type, dict[int, list[Metric]]] | None = {}
 
 class NumDriversExperiment(Experiment):
     
-    def run(self, strategy_types: list[tuple[type, dict[str,Hashable]]], min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
+    def run(self, strategy_types: list[tuple[type, dict[str,Hashable]]], min_drivers: int, max_drivers: int) -> dict[type, dict[int, list[Metric]]]:
         self.strategy_info = strategy_types
         self.strategy_names = list(map(lambda x: x[0], strategy_types))
         self.min_drivers = min_drivers
@@ -39,9 +38,9 @@ class NumDriversExperiment(Experiment):
             return {num_drivers:output}
         
        
-        results_by_strategy = {}
+        results_by_strategy: dict[type, dict[int, list[Metric]]] = {}
         for index, strategy_type in enumerate(self.strategy_names):
-            output_by_driver_number = {}
+            output_by_driver_number: dict[int, list[Metric]] = {}
             cpu_count = os.cpu_count()
             with concurrent.futures.ThreadPoolExecutor(max_workers=(cpu_count if cpu_count is not None else 4)) as pool:
                 trial_futures = {pool.submit(worker_func, strategy_type(self.mapper, **self.strategy_info[index][1]), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
@@ -60,7 +59,6 @@ class NumDriversExperiment(Experiment):
             print("No results to display")
             return
         else:
-            traces = []
             num_drivers_available = 0
             for strategy in self.strategy_names:
                 metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))
@@ -78,7 +76,7 @@ class NumDriversExperiment(Experiment):
 
 class BatchSizeExperiment(Experiment):
     
-    def run(self, strategy_types: list[tuple[type, dict[str,Hashable]]], min_batch_size: int, max_batch_size: int, num_drivers:int) -> dict[int, list[Metric]]:
+    def run(self, strategy_types: list[tuple[type, dict[str,Hashable]]], min_batch_size: int, max_batch_size: int, num_drivers:int) -> dict[type, dict[int, list[Metric]]]:
         self.num_drivers = num_drivers
         self.strategy_info = strategy_types
         self.strategy_names = list(map(lambda x: x[0], strategy_types))
@@ -94,9 +92,9 @@ class BatchSizeExperiment(Experiment):
             return {strategy.batch_time:output}
         
        
-        results_by_strategy = {}
+        results_by_strategy: dict[type, dict[int, list[Metric]]] = {}
         for index, strategy_type in enumerate(self.strategy_names):
-            output_by_batch_size = {}
+            output_by_batch_size: dict[int, list[Metric]] = {}
             cpu_count = os.cpu_count()
             with concurrent.futures.ThreadPoolExecutor(max_workers=(cpu_count if cpu_count is not None else 4)) as pool:
                 trial_futures = {pool.submit(worker_func, strategy_type(mapper=self.mapper, batch_time=batch_size, **self.strategy_info[index][1]), copy.deepcopy(self.rides), self.drivers, num_drivers) : batch_size for batch_size in range(min_batch_size, max_batch_size + 1, 20)}
@@ -115,7 +113,6 @@ class BatchSizeExperiment(Experiment):
             print("No results to display")
             return
         else:
-            traces = []
             batch_size = 0
             for strategy in self.strategy_names:
                 metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))

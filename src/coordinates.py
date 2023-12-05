@@ -11,5 +11,8 @@ class Coordinates:
     def __hash__(self) -> int:
         return hash((self.latitude, self.longitude))
 
-    def __eq__(self, other: "Coordinates") -> bool:
-        return self.latitude == other.latitude and self.longitude == other.longitude
+    def __eq__(self, other: "object") -> bool:
+        if isinstance(other, self.__class__):
+            return self.latitude == other.latitude and self.longitude == other.longitude
+        else:
+            return False

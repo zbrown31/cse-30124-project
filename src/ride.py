@@ -1,10 +1,7 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 
-from src import gmaps_client
-
 from .canceller import Canceller
-from .driver import Driver
 from .trip import Trip
 
 
@@ -16,8 +13,8 @@ class RideStatus(Enum):
     CANCELLED = 4
 
 class Ride:
-    def __init__(self, trip:Trip, price: float,  request_time:datetime, driver:Driver | None = None) -> None:
-        self.driver = driver
+    def __init__(self, trip:Trip, price: float,  request_time:datetime, driver_id:int | None = None) -> None:
+        self.driver_id = driver_id
         self.trip = trip
         self.status: RideStatus = RideStatus.REQUESTED
         self.price = price
@@ -33,12 +30,11 @@ class Ride:
         self.status = RideStatus.CANCELLED
         self.cancel_time = time
     
-    def match(self, driver: Driver, time:datetime, time_to_pickup: timedelta) -> None:
+    def match(self, driver_id: int, time:datetime, time_to_pickup: timedelta) -> None:
         self.status = RideStatus.MATCHED
-        self.driver = driver
+        self.driver_id = driver_id
         self.match_time = time
         self.time_to_pickup = time_to_pickup
-        self.driver.add_ride(self)
 
 
     def picked_up(self, time:datetime) -> None:
@@ -48,7 +44,6 @@ class Ride:
     def arrived(self, time:datetime) -> None:
         self.status = RideStatus.COMPLETED
         self.arrived_time = time
-        self.driver.finish_current_ride()
 
     def set_status(self, status:RideStatus) -> None:
         self.status = status
@@ -57,21 +52,24 @@ class Ride:
         self.expected_cancel_time = canceller.get_cancel_time(current_time)
 
     def will_cancel(self, current_time: datetime) -> bool:
-        return current_time > self.expected_cancel_time
+        if self.expected_cancel_time is not None:
+            return current_time > self.expected_cancel_time
+        else: 
+            return False
     
-    def get_time_to_match(self) -> int:
+    def get_time_to_match(self) -> float | None:
         if self.match_time is not None:
             return (self.match_time - self.request_time).total_seconds()
         else:
             return None
     
-    def get_time_to_cancel(self) -> int:
+    def get_time_to_cancel(self) -> float | None:
         if self.cancel_time is not None:
             return (self.cancel_time - self.request_time).total_seconds()
         else:
             return None
     
-    def get_time_to_resolved(self) -> int:
+    def get_time_to_resolved(self) -> float | None:
         if self.cancel_time is not None:
             return (self.cancel_time - self.request_time).total_seconds()
         elif self.match_time is not None:
@@ -87,7 +85,7 @@ class Ride:
         else:
             return None
     
-    def get_wait_time(self, current_time: datetime) -> int:
+    def get_wait_time(self, current_time: datetime) -> float | None:
         if self.cancel_time is None and self.pickup_time is None:
             return (current_time  - self.request_time).total_seconds()
         elif self.pickup_time is not None:
