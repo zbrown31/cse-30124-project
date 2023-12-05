@@ -1,6 +1,5 @@
 from .location import Location
 from .coordinates import Coordinates
-from .rider import Rider
 from .driver import Driver
 from .trip import Trip
 from .ride import Ride, RideStatus
@@ -12,4 +11,4 @@ from .metric import Metric
 from .norm import Norm
 from .experiment import NumDriversExperiment
 
-__all__ = ['Location', 'Coordinates', 'Rider', 'Driver', 'Trip', 'Ride', 'RideStatus', 'Strategy', 'Dispatcher', 'GMapsClient', 'DataReader', 'Clock', 'Metric', 'Norm', 'NumDriversExperiment']
+__all__ = ['Location', 'Coordinates', 'Driver', 'Trip', 'Ride', 'RideStatus', 'Strategy', 'Dispatcher', 'GMapsClient', 'DataReader', 'Clock', 'Metric', 'Norm', 'NumDriversExperiment']

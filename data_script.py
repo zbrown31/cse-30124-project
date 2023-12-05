@@ -11,10 +11,6 @@ del collections['AuthorizedEmails']
 del collections['Globals']
 del collections['Communities']
 
-for rider_id in collections['Riders'].keys():
-    for key in ['first_name', 'last_name', 'full_name', 'display_name', 'phone_number', 'email', 'username', 'venmo_username', "profile_pic"]:
-        if key in collections['Riders'][rider_id]:
-            del collections['Riders'][rider_id][key]
 
 for driver_id in collections['Drivers'].keys():
     for key in ['first_name', 'last_name', 'full_name', 'display_name', 'phone_number', 'email', 'username', 'venmo_username', "profile_pic"]:
@@ -23,8 +19,6 @@ for driver_id in collections['Drivers'].keys():
 
 for ride_id in collections['Rides'].keys():
     for key in ['first_name', 'last_name', 'full_name', 'display_name', 'phone_number', 'email', 'username', 'venmo_username', "profile_pic"]:
-        if key in collections['Rides'][ride_id]['rider']:
-            del collections['Rides'][ride_id]['rider'][key]
         if key in collections['Rides'][ride_id].get('driver',{}):
             del collections['Rides'][ride_id]['driver'][key]
 

@@ -133,8 +133,9 @@ class BatchedGreedyStrategy(Strategy):
         self.step = -1
     def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride,Driver]] | None:
         self.step += 1
-        if (self.step % self.batch_time == 0):
-            ride_queue = deque(rides)
+        if (self.step % self.batch_time != 0):
+            return []
+        ride_queue = deque(rides)
         available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) == 0), drivers))
         
         assignments = []

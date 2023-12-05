@@ -1,5 +1,4 @@
 from src import gmaps_client
-from .rider import Rider
 from .driver import Driver
 from .trip import Trip
 from datetime import date, datetime, timedelta
@@ -13,8 +12,7 @@ class RideStatus(Enum):
     CANCELLED = 4
 
 class Ride:
-    def __init__(self, rider:Rider, trip:Trip, price: float,  request_time:datetime, driver:Driver | None = None) -> None:
-        self.rider = rider
+    def __init__(self, trip:Trip, price: float,  request_time:datetime, driver:Driver | None = None) -> None:
         self.driver = driver
         self.trip = trip
         self.status: RideStatus = RideStatus.REQUESTED

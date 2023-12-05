@@ -1,6 +1,5 @@
 import pathlib, json
 from datetime import datetime, timedelta
-from .rider import Rider
 from .driver import Driver
 from .coordinates import Coordinates
 from .trip import Trip
@@ -30,12 +29,6 @@ class DataReader:
         else:
             self.data = None
     
-    @staticmethod
-    def parse_rider_json(rider_dict: dict) -> Rider | None:
-        try:
-            return Rider(rider_dict.get('uid'))
-        except KeyError as ex:
-            return None
         
     @staticmethod
     def parse_driver_json(driver_dict: dict) -> Driver | None:
@@ -62,4 +55,4 @@ class DataReader:
     def parse_ride_json(ride_dict:dict) -> Ride | None:
         if not 'request_time' in ride_dict:
             return None
-        return Ride(rider=DataReader.parse_rider_json(rider_dict=ride_dict.get("rider",{})), trip=DataReader.parse_trip_json(trip_dict=ride_dict.get("trip",{})), price=ride_dict.get("price",0), request_time=datetime.fromtimestamp(ride_dict['request_time']['value']['_seconds']), driver=DataReader.parse_driver_json(driver_dict=ride_dict.get("driver", {})))
+        return Ride(trip=DataReader.parse_trip_json(trip_dict=ride_dict.get("trip",{})), price=ride_dict.get("price",0), request_time=datetime.fromtimestamp(ride_dict['request_time']['value']['_seconds']), driver=DataReader.parse_driver_json(driver_dict=ride_dict.get("driver", {})))

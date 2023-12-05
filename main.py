@@ -19,5 +19,5 @@ online_drivers = data.resources["Drivers"]
 # [metric.display() for metric in results]
 
 experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-output = experiment.run([GreedyStrategy, HungarianStrategy], 1, 20)
+output = experiment.run([(GreedyStrategy, {}), (HungarianStrategy,{}), (BatchedGreedyStrategy, {'batch_time' : 2}), (BatchedHungarian, {'batch_time' : 2})], 1, 20)
 experiment.display()

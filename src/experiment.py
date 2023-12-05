@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 import copy
+import os
 import concurrent.futures
 import matplotlib.pyplot as plt
+from typing import Hashable
 
 from numpy import maximum
 
@@ -22,8 +24,9 @@ class Experiment(ABC):
 
 class NumDriversExperiment(Experiment):
     
-    def run(self, strategy_types: list[type], min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
-        self.strategy_types = strategy_types
+    def run(self, strategy_types: list[tuple[type, dict[str,Hashable]]], min_drivers: int, max_drivers: int) -> dict[int, list[Metric]]:
+        self.strategy_info = strategy_types
+        self.strategy_names = list(map(lambda x: x[0], strategy_types))
         self.min_drivers = min_drivers
         self.max_drivers = max_drivers
 
@@ -37,10 +40,11 @@ class NumDriversExperiment(Experiment):
         
        
         results_by_strategy = {}
-        for strategy_type in self.strategy_types:
+        for index, strategy_type in enumerate(self.strategy_names):
             output_by_driver_number = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-                trial_futures = {pool.submit(worker_func, strategy_type(self.mapper), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
+            cpu_count = os.cpu_count()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=(cpu_count if cpu_count is not None else 4)) as pool:
+                trial_futures = {pool.submit(worker_func, strategy_type(self.mapper, **self.strategy_info[index][1]), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
                 for future in concurrent.futures.as_completed(trial_futures):
                     try:
                         output_by_driver_number = {**output_by_driver_number, **future.result()}
@@ -57,7 +61,7 @@ class NumDriversExperiment(Experiment):
             return
         else:
             traces = []
-            for strategy in self.strategy_types:
+            for strategy in self.strategy_names:
                 metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))
                 num_drivers_available = metrics[0]
                 match_percentage = metrics[1]
