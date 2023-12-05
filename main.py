@@ -17,10 +17,10 @@ online_drivers = data.resources["Drivers"]
 
 # [metric.display() for metric in results]
 
-# experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-# output = experiment.run([(GreedyStrategy, {}), (HungarianStrategy,{}), (BatchedGreedyStrategy, {'batch_time' : 12}), (BatchedHungarian, {'batch_time' : 12})], 1, 20)
-# experiment.display()
-
-experiment = BatchSizeExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-output = experiment.run([(BatchedGreedyStrategy, {}), (BatchedHungarianStrategy, {})], 1, 1000, 5)
+experiment = NumDriversExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
+output = experiment.run([(GreedyStrategy, {}), (HungarianStrategy,{}), (BatchedGreedyStrategy, {'batch_time' : 12}), (BatchedHungarianStrategy, {'batch_time' : 12})], 1, 20)
 experiment.display()
+
+# experiment = BatchSizeExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
+# output = experiment.run([(BatchedGreedyStrategy, {}), (BatchedHungarianStrategy, {})], 1, 1000, 5)
+# experiment.display()

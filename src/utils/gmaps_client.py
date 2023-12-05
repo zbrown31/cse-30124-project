@@ -12,23 +12,27 @@ class GMapsClient:
 
         self.cache: dict[str, Norm] = {}
 
-        if os.path.exists("data/distance_cache.json"):
-            with open("data/distance_cache.json") as fh:
+        if os.path.exists("/Users/zachbrown/Desktop/School/College/Intro to AI/Project/data/distance_cache.json"):
+            with open("/Users/zachbrown/Desktop/School/College/Intro to AI/Project/data/distance_cache.json") as fh:
                 self.cache = json.load(fh)
             for key in self.cache:
                 self.cache[key] = Norm.fromJson(self.cache[key])
     
     def address_to_coordinates(self, address: str) -> Coordinates:
+        return Coordinates(0,0)
         geocode_result = self.client.geocode(address) # type: ignore
         return Coordinates(geocode_result[0]['geometry']['location'] ['lat'], geocode_result[0]['geometry']['location'] ['lng'])
     
     def coordinates_to_address(self, coordinates: Coordinates) -> str:
+        return ""
         reverse_geocode_results = self.client.reverse_geocode(coordinates.to_tuple()) # type: ignore
         return reverse_geocode_results["results"][0]["formatted_address"]
     
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
         if str(hash((start,destination))) in self.cache:
             return self.cache[str(hash((start,destination)))]
+        print("Cache Miss")
+        return Norm(0,timedelta(seconds=0))
         distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric") # type: ignore
         distances = distance_matrix_results["rows"][0]["elements"][0]
         if distances['status'] != 'ZERO_RESULTS':
