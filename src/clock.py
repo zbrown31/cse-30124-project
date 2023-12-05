@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+
 class Clock:
 
     def __init__(self, start_time: datetime, end_time:datetime | None = None) -> None:

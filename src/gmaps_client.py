@@ -20,17 +20,17 @@ class GMapsClient:
                 self.cache[key] = Norm.fromJson(self.cache[key])
     
     def address_to_coordinates(self, address: str) -> Coordinates:
-        geocode_result = self.client.geocode(address)
+        geocode_result = self.client.geocode(address) # type: ignore
         return Coordinates(geocode_result[0]['geometry']['location'] ['lat'], geocode_result[0]['geometry']['location'] ['lng'])
     
     def coordinates_to_address(self, coordinates: Coordinates) -> str:
-        reverse_geocode_results = self.client.reverse_geocode(coordinates.to_tuple())
+        reverse_geocode_results = self.client.reverse_geocode(coordinates.to_tuple()) # type: ignore
         return reverse_geocode_results["results"][0]["formatted_address"]
     
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
         if hash((start,destination)) in self.cache:
             return self.cache[hash((start,destination))]
-        distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric")
+        distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric") # type: ignore
         distances = distance_matrix_results["rows"][0]["elements"][0]
         if distances['status'] != 'ZERO_RESULTS':
             return Norm(distances["distance"]["value"], timedelta(seconds=distances["duration"]["value"]))

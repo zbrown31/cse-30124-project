@@ -1,11 +1,13 @@
-import pathlib, json
+import json
+import pathlib
 from datetime import datetime, timedelta
-from .driver import Driver
+
 from .coordinates import Coordinates
-from .trip import Trip
+from .driver import Driver
 from .location import Location
-from .ride import Ride
 from .norm import Norm
+from .ride import Ride
+from .trip import Trip
 
 PRECISION = 3
 

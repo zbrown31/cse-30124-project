@@ -1,9 +1,12 @@
-from src import gmaps_client
-from .driver import Driver
-from .canceller import Canceller
-from .trip import Trip
 from datetime import date, datetime, timedelta
 from enum import Enum
+
+from src import gmaps_client
+
+from .canceller import Canceller
+from .driver import Driver
+from .trip import Trip
+
 
 class RideStatus(Enum):
     REQUESTED = 0

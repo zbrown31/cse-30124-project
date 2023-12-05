@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from urllib.parse import _NetlocResultMixinBytes
+
 import numpy as np
-from .ride import Ride, RideStatus
+
 from .driver import Driver
+from .ride import Ride, RideStatus
+
 
 class Metric(ABC):
-    def __init__(self) -> "Metric":
+    def __init__(self):
         self.value = None
 
     @abstractmethod

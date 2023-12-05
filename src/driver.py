@@ -29,8 +29,11 @@ class Driver:
         if self.current_ride is not None:
             time_remaining =  self.current_ride.get_time_remaining(current_time)
         elif len(self.ride_queue) > 0:
-            current_ride_time_remaining = self.current_ride.get_time_remaining(current_time)
-            queued_ride_time_remaining = self.queued_ride.get_time_remaining(current_time)
+            if self.current_ride is not None:
+                current_ride_time_remaining = self.current_ride.get_time_remaining(current_time)
+            else:
+                current_ride_time_remaining = 0
+            queued_ride_time_remaining = self.ride_queue[0].get_time_remaining(current_time)
             if current_ride_time_remaining is not None and queued_ride_time_remaining is not None:
                 time_remaining = current_ride_time_remaining + queued_ride_time_remaining
         elif len(self.ride_history) > 0:

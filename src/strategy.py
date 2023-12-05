@@ -1,27 +1,22 @@
 from abc import ABC, abstractmethod
-from urllib import request
-from scipy import optimize
-import numpy as np
-from datetime import datetime, timedelta
-import enum
-import time
 from collections import deque
+from datetime import datetime, timedelta
 
-from pyparsing import col
+import numpy as np
+from scipy import optimize
 
 from src import gmaps_client
-from .ride import Ride, RideStatus
+
+from .canceller import Canceller, ChiCanceller
+from .clock import Clock
 from .driver import Driver
 from .metric import Metric
-from .clock import Clock
-from .canceller import Canceller, ChiCanceller, NormalCanceller
-from src import driver
+from .ride import Ride, RideStatus
 
-from src import ride
 
 class Dispatcher:
-    def __init__(self, ride_requests: list[Ride], drivers: list[Driver], strategy:"Strategy", canceller: Canceller, mapper: gmaps_client.GMapsClient):
-        self.ride_requests = sorted(ride_requests, key= lambda x: x.request_time)
+    def __init__(self, ride_requests: list[Ride], drivers: list[Driver], strategy:"Strategy", canceller: Canceller, mapper: gmaps_client.GMapsClient): 
+        self.ride_requests = sorted(ride_requests, key=(lambda x: x.request_time))
         self.start_time = self.ride_requests[0].request_time
         resolved_time = self.ride_requests[-1].get_resolved_time()
         if resolved_time is not None:
@@ -35,7 +30,7 @@ class Dispatcher:
         self.canceller = canceller
         self.mapper = mapper
     
-    def assign_ride(self, ride:Ride) -> None:
+    def assign_ride(self, ride: Ride) -> None:
         assigned_driver = self.strategy.choose_driver(ride, self.drivers)
         assigned_driver.add_ride(ride)
     
@@ -82,6 +77,7 @@ class Dispatcher:
             self.clock.tick()
         return resolved_rides
 
+
 class Strategy(ABC):
     def __init__(self, mapper: gmaps_client.GMapsClient):
         self.mapper = mapper
@@ -98,11 +94,13 @@ class Strategy(ABC):
             metric.calculate(ride_assignments=assignments)
         return metrics
 
+
 class BatchedStrategy(Strategy):
-    def __init__(self, mapper:gmaps_client.GMapsClient, batch_time: int) -> "GreedyStrategy":
+    def __init__(self, mapper: gmaps_client.GMapsClient, batch_time: int) -> "GreedyStrategy":
         self.mapper = mapper
         self.batch_time = batch_time
         self.step = -1
+
 
 class BaseStrategy(Strategy):
     def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride, Driver]] | None:
@@ -112,17 +110,17 @@ class BaseStrategy(Strategy):
         while len(ride_queue) > 0 and len(available_drivers) > 0:
             assignments.append((ride_queue.popleft(), available_drivers.popleft()))
         return assignments
-        
+
+
+
 class GreedyStrategy(Strategy):
     def __init__(self, mapper: gmaps_client.GMapsClient):
         self.mapper = mapper
-    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time:datetime) -> list[tuple[Ride,Driver]] | None:
+    def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time: datetime) -> list[tuple[Ride, Driver]] | None:
         ride_queue = deque(rides)
         available_drivers = deque(filter(lambda x: (x.current_ride is None or len(x.ride_queue) <= 1), drivers))
-        
         assignments = []
-
-        while len(ride_queue) > 0 and len(available_drivers) > 0: 
+        while len(ride_queue) > 0 and len(available_drivers) > 0:
             ride = ride_queue[0]
             pickup_times = []
             for driver in available_drivers:
@@ -144,7 +142,7 @@ class BatchedGreedyStrategy(BatchedStrategy):
         
         assignments = []
 
-        while len(ride_queue) > 0 and len(available_drivers) > 0: 
+        while len(ride_queue) > 0 and len(available_drivers) > 0:
             ride = ride_queue[0]
             pickup_times = []
             for driver in available_drivers:
@@ -168,6 +166,7 @@ class HungarianStrategy(Strategy):
                 cost_matrix[ride_index, driver_index] = driver.get_time_away(self.mapper, ride.trip.start, current_time).total_seconds()
         row_indexes, col_indexes = optimize.linear_sum_assignment(cost_matrix)
         return list(map(lambda x: (rides[x[0]], drivers[x[1]]), list(zip(list(row_indexes), list(col_indexes)))))
+
 
 class BatchedHungarian(BatchedStrategy):
     def assign_drivers(self, rides: list[Ride], drivers: list[Driver], current_time: datetime) -> list[tuple[Ride, Driver]] | None:

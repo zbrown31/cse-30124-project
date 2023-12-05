@@ -1,26 +1,26 @@
-from abc import ABC, abstractmethod
+import concurrent.futures
 import copy
 import os
-import concurrent.futures
-import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
 from typing import Hashable
 
+import matplotlib.pyplot as plt
 from numpy import maximum
 
-from .metric import Metric, MatchRate, MatchTime, CancelRate, RideDistributionByDriver, CancelTime
-from .strategy import BatchedStrategy, GreedyStrategy, Strategy
-from .gmaps_client import GMapsClient
-from .ride import Ride
 from .driver import Driver
-from .metric import Metric
+from .gmaps_client import GMapsClient
+from .metric import (CancelRate, CancelTime, MatchRate, MatchTime, Metric,
+                     RideDistributionByDriver)
+from .ride import Ride
+from .strategy import BatchedStrategy, GreedyStrategy, Strategy
 
 
 class Experiment(ABC):
-    def __init__(self, mapper:GMapsClient, rides:list[Ride], drivers: list[Driver]) -> "Experiment":
+    def __init__(self, mapper:GMapsClient, rides:list[Ride], drivers: list[Driver]):
         self.mapper = mapper
         self.rides = rides
         self.drivers = drivers
-        self.result: dict[int, list[Metric]] | None = {}
+        self.result: dict[type, dict[Hashable, list[Metric]]] | None = {}
 
 class NumDriversExperiment(Experiment):
     
@@ -61,6 +61,7 @@ class NumDriversExperiment(Experiment):
             return
         else:
             traces = []
+            num_drivers_available = 0
             for strategy in self.strategy_names:
                 metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))
                 num_drivers_available = metrics[0]
@@ -115,6 +116,7 @@ class BatchSizeExperiment(Experiment):
             return
         else:
             traces = []
+            batch_size = 0
             for strategy in self.strategy_names:
                 metrics = list(zip(*sorted([(item[0], item[1][0].value) for item in self.result[strategy].items()])))
                 batch_size = metrics[0]

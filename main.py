@@ -1,10 +1,12 @@
-from src import DataReader
-from src import experiment
+from src import DataReader, experiment
 from src.canceller import NormalCanceller
-from src.gmaps_client import GMapsClient
-from src.strategy import BatchedGreedyStrategy, BatchedHungarian, Dispatcher, BaseStrategy, GreedyStrategy, HungarianStrategy
-from src.metric import MatchRate, MatchTime, CancelRate, RideDistributionByDriver
 from src.experiment import BatchSizeExperiment, NumDriversExperiment
+from src.gmaps_client import GMapsClient
+from src.metric import (CancelRate, MatchRate, MatchTime,
+                        RideDistributionByDriver)
+from src.strategy import (BaseStrategy, BatchedGreedyStrategy,
+                          BatchedHungarian, Dispatcher, GreedyStrategy,
+                          HungarianStrategy)
 
 data = DataReader('/Users/zachbrown/Desktop/Work/Desi/Tech/Code/firebase_backups/backup_10_30_23.json')
 

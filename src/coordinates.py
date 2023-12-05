@@ -5,7 +5,7 @@ class Coordinates:
     latitude: float
     longitude: float
 
-    def to_tuple(self) -> tuple[str,str]:
+    def to_tuple(self) -> tuple[float,float]:
         return (self.latitude, self.longitude)
     
     def __hash__(self) -> int:

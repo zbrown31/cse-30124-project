@@ -5,7 +5,7 @@ class Norm:
         self.distance = distance
         self.duration = duration
     
-    def toJson(self) -> dict[str, int]:
+    def toJson(self) -> dict[str, float]:
         return {'distance' : self.distance, 'duration' : self.duration.total_seconds()}
     
     @staticmethod
