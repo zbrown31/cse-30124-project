@@ -61,6 +61,8 @@ experiment.display()
 min_batch_size: int = 1
 # Maximum batch size to test
 max_batch_size: int = 20
+#Batch size step
+batch_step: int = 1
 # Driver pool size in each test
 num_drivers: int = 5
 # List of strategies to test
@@ -78,5 +80,5 @@ experiment = BatchSizeExperiment(
     rides=list(sorted(data.resources["Rides"], key=lambda x: x.request_time)),
     drivers=online_drivers,
 )
-output = experiment.run(strategies, min_batch_size, max_batch_size, num_drivers)
+output = experiment.run(strategies, min_batch_size, max_batch_size, num_drivers, batch_step)
 experiment.display()

@@ -1,5 +1,6 @@
 import concurrent.futures
 import copy
+import enum
 import os
 from abc import ABC
 from typing import Hashable
@@ -57,10 +58,6 @@ class NumDriversExperiment(Experiment):
                 rides,
                 drivers[:num_drivers],
             )
-            print(f"Number of Drivers: {num_drivers}")
-            for metric in output:
-                metric.display()
-            print("\n\n\n")
             return {num_drivers: output}
 
         results_by_strategy: dict[type, dict[int, list[Metric]]] = {}
@@ -89,7 +86,14 @@ class NumDriversExperiment(Experiment):
                         results_by_strategy[strategy_type] = output_by_driver_number
                     except Exception as exc:
                         print("Generated an exception: %s" % (exc))
-
+        for strategy in self.strategy_names:
+            print(strategy.__name__ + "\n")
+            for num_drivers, output in sorted(results_by_strategy[strategy].items(), key=lambda x: x[0]):
+                print(f"Number of Drivers: {num_drivers}")
+                for metric in output:
+                    metric.display()
+                print("\n")
+            print("\n\n\n")
         self.result = results_by_strategy
         return results_by_strategy
 
@@ -130,12 +134,14 @@ class BatchSizeExperiment(Experiment):
         min_batch_size: int,
         max_batch_size: int,
         num_drivers: int,
+        batch_step: int = 1
     ) -> dict[type, dict[int, list[Metric]]]:
         self.num_drivers = num_drivers
         self.strategy_info = strategy_types
         self.strategy_names = list(map(lambda x: x[0], strategy_types))
         self.min_batch_size = min_batch_size
         self.max_batch_size = max_batch_size
+        self.batch_step = batch_step
 
         def worker_func(
             strategy: BatchedStrategy,
@@ -154,10 +160,6 @@ class BatchSizeExperiment(Experiment):
                 rides,
                 drivers[:num_drivers],
             )
-            print(f"Batch Size: {strategy.batch_time}")
-            for metric in output:
-                metric.display()
-            print("\n\n\n")
             return {strategy.batch_time: output}
 
         results_by_strategy: dict[type, dict[int, list[Metric]]] = {}
@@ -179,7 +181,7 @@ class BatchSizeExperiment(Experiment):
                         copy.deepcopy(self.drivers),
                         num_drivers,
                     ): batch_size
-                    for batch_size in range(min_batch_size, max_batch_size + 1, 20)
+                    for batch_size in range(min_batch_size, max_batch_size + 1, self.batch_step)
                 }
                 for future in concurrent.futures.as_completed(trial_futures):
                     try:
@@ -191,7 +193,14 @@ class BatchSizeExperiment(Experiment):
                     except Exception as exc:
                         print("Generated an exception: %s" % (exc))
                         traceback.print_exc()
-
+        for strategy in self.strategy_names:
+            print(strategy.__name__ + "\n")
+            for batch_time, output in sorted(results_by_strategy[strategy].items(), key=lambda x: x[0]):
+                print(f"Batch Size: {batch_time}")
+                for metric in output:
+                    metric.display()
+                print("\n")
+            print("\n\n\n")
         self.result = results_by_strategy
         return results_by_strategy
 
@@ -217,7 +226,7 @@ class BatchSizeExperiment(Experiment):
                 plt.plot(batch_size, match_percentage, label=strategy.__name__)
             plt.xlabel("Batch Size")
             plt.ylabel("Match Percentage")
-            # plt.xticks(batch_size)
+            plt.xticks(batch_size)
             plt.title("Match Percentage by Batch Size")
             plt.legend()
             plt.show()
