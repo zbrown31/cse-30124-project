@@ -3,6 +3,7 @@ import copy
 import os
 from abc import ABC
 from typing import Hashable
+import traceback
 
 import matplotlib.pyplot as plt
 
@@ -42,7 +43,7 @@ class NumDriversExperiment(Experiment):
             output_by_driver_number: dict[int, list[Metric]] = {}
             cpu_count = os.cpu_count()
             with concurrent.futures.ThreadPoolExecutor(max_workers=(cpu_count if cpu_count is not None else 4)) as pool:
-                trial_futures = {pool.submit(worker_func, strategy_type(self.mapper, **self.strategy_info[index][1]), copy.deepcopy(self.rides), self.drivers, num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
+                trial_futures = {pool.submit(worker_func, strategy_type(self.mapper, **self.strategy_info[index][1]), copy.deepcopy(self.rides), copy.deepcopy(self.drivers), num_drivers) : num_drivers for num_drivers in range(min_drivers, max_drivers + 1)}
                 for future in concurrent.futures.as_completed(trial_futures):
                     try:
                         output_by_driver_number = {**output_by_driver_number, **future.result()}
@@ -96,13 +97,14 @@ class BatchSizeExperiment(Experiment):
             output_by_batch_size: dict[int, list[Metric]] = {}
             cpu_count = os.cpu_count()
             with concurrent.futures.ThreadPoolExecutor(max_workers=(cpu_count if cpu_count is not None else 4)) as pool:
-                trial_futures = {pool.submit(worker_func, strategy_type(mapper=self.mapper, batch_time=batch_size, **self.strategy_info[index][1]), copy.deepcopy(self.rides), self.drivers, num_drivers) : batch_size for batch_size in range(min_batch_size, max_batch_size + 1, 20)}
+                trial_futures = {pool.submit(worker_func, strategy_type(mapper=self.mapper, batch_time=batch_size, **self.strategy_info[index][1]), copy.deepcopy(self.rides), copy.deepcopy(self.drivers), num_drivers) : batch_size for batch_size in range(min_batch_size, max_batch_size + 1, 20)}
                 for future in concurrent.futures.as_completed(trial_futures):
                     try:
                         output_by_batch_size = {**output_by_batch_size, **future.result()}
                         results_by_strategy[strategy_type] = output_by_batch_size
                     except Exception as exc:
                         print('Generated an exception: %s' % (exc))
+                        traceback.print_exc()
         
         self.result = results_by_strategy
         return results_by_strategy
@@ -120,7 +122,7 @@ class BatchSizeExperiment(Experiment):
                 plt.plot(batch_size, match_percentage, label=strategy.__name__)
             plt.xlabel("Batch Size")
             plt.ylabel("Match Percentage")
-            plt.xticks(batch_size)
+            #plt.xticks(batch_size)
             plt.title("Match Percentage by Batch Size")
             plt.legend()
             plt.show()

@@ -31,7 +31,6 @@ class GMapsClient:
     def get_distance(self, start: Coordinates, destination:Coordinates) -> Norm:
         if str(hash((start,destination))) in self.cache:
             return self.cache[str(hash((start,destination)))]
-        print("Cache Miss")
         return Norm(0,timedelta(seconds=0))
         distance_matrix_results = self.client.distance_matrix(origins=start.to_tuple(), destinations=destination.to_tuple(), mode="driving", units="metric") # type: ignore
         distances = distance_matrix_results["rows"][0]["elements"][0]
