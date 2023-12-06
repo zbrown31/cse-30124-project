@@ -5,4 +5,4 @@ from .norm import Norm
 from .ride import Ride, RideStatus
 from .trip import Trip
 
-__all__ = ['Coordinates', 'Driver', 'Location', 'Norm', 'Ride', 'RideStatus', 'Trip']
+__all__ = ["Coordinates", "Driver", "Location", "Norm", "Ride", "RideStatus", "Trip"]

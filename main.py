@@ -5,7 +5,9 @@ from src.simulation import NormalCanceller
 from src.simulation.metric import *
 from src.simulation.strategies import *
 
-data = DataReader('/Users/zachbrown/Desktop/Work/Desi/Tech/Code/firebase_backups/backup_10_30_23.json')
+data = DataReader(
+    "/Users/zachbrown/Desktop/Work/Desi/Tech/Code/firebase_backups/backup_10_30_23.json"
+)
 
 mapper = GMapsClient()
 # base_strategy = BatchedHungarian(mapper, 3)
@@ -21,6 +23,12 @@ online_drivers = data.resources["Drivers"]
 # output = experiment.run([(BaseStrategy, {}),(GreedyStrategy, {}), (HungarianStrategy,{}), (BatchedGreedyStrategy, {'batch_time' : 12}), (BatchedHungarianStrategy, {'batch_time' : 12})], 1, 20)
 # experiment.display()
 
-experiment = BatchSizeExperiment(mapper=mapper, rides=list(sorted(data.resources["Rides"], key = lambda x: x.request_time)), drivers=online_drivers)
-output = experiment.run([(BatchedGreedyStrategy, {}), (BatchedHungarianStrategy, {})], 1, 1000, 5)
+experiment = BatchSizeExperiment(
+    mapper=mapper,
+    rides=list(sorted(data.resources["Rides"], key=lambda x: x.request_time)),
+    drivers=online_drivers,
+)
+output = experiment.run(
+    [(BatchedGreedyStrategy, {}), (BatchedHungarianStrategy, {})], 1, 1000, 5
+)
 experiment.display()

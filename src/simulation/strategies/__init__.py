@@ -4,4 +4,11 @@ from .batched_hungarian_strategy import BatchedHungarianStrategy
 from .greedy_strategy import GreedyStrategy
 from .hungarian_strategy import HungarianStrategy
 
-__all__ = ['BaseStrategy', 'GreedyStrategy', 'HungarianStrategy', 'BatchedGreedyStrategy', 'BatchedHungarianStrategy', "BaseStrategy"]
+__all__ = [
+    "BaseStrategy",
+    "GreedyStrategy",
+    "HungarianStrategy",
+    "BatchedGreedyStrategy",
+    "BatchedHungarianStrategy",
+    "BaseStrategy",
+]
